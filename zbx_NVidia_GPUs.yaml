@@ -15,8 +15,9 @@ zabbix_export:
           type: DEPENDENT
           key: gpu.count
           delay: '0'
-          history: 1d
-          trends: 30d
+          history: 30d
+          trends: 90d
+          description: 'Number of GPUs detected'
           preprocessing:
             - type: JSONPATH
               parameters:
@@ -29,6 +30,7 @@ zabbix_export:
           history: 1h
           trends: '0'
           value_type: TEXT
+          description: 'Data collection by GPUs'
           preprocessing:
             - type: CSV_TO_JSON
               parameters:
@@ -40,9 +42,10 @@ zabbix_export:
           type: DEPENDENT
           key: gpu.driver_version
           delay: '0'
-          history: 1d
+          history: 30d
           trends: '0'
           value_type: TEXT
+          description: 'GPU driver version'
           inventory_link: SOFTWARE
           preprocessing:
             - type: JSONPATH
@@ -55,32 +58,66 @@ zabbix_export:
               expression: 'change(/Nvidia Multi-GPU/gpu.driver_version)<>0'
               name: 'Driver version changed'
               priority: INFO
-              description: 'Driver version has changed'
+              description: 'The driver version has changed'
         - uuid: 2342ff31e369484c90d63210c58eb77e
           name: 'GPU Power Total'
-          type: CALCULATED
+          type: DEPENDENT
           key: gpu.power_total
-          history: 7d
+          delay: '0'
+          history: 30d
           trends: 90d
+          value_type: FLOAT
           units: W
-          params: 'sum(last_foreach(//gpu.power.[*]))'
+          description: 'Power consumption of all GPUs'
+          preprocessing:
+            - type: STR_REPLACE
+              parameters:
+                - ' '
+                - ''
+            - type: JSONPATH
+              parameters:
+                - '$[*].8.sum()'
+          master_item:
+            key: gpu.data
         - uuid: 8401ed7ac3a249ea92515b41fd7cc68a
           name: 'GPUs Maximum Temperature'
-          type: CALCULATED
+          type: DEPENDENT
           key: gpu.temp_max
-          history: 7d
+          delay: '0'
+          history: 30d
           trends: 90d
           units: °C
-          params: 'max(last_foreach(//gpu.temperature.[*]))'
           description: 'Temperature of the hottest GPU'
+          preprocessing:
+            - type: STR_REPLACE
+              parameters:
+                - ' '
+                - ''
+            - type: JSONPATH
+              parameters:
+                - '$[*].2.max()'
+          master_item:
+            key: gpu.data
         - uuid: 1d16ecd4f52b464a812dfc500a2a9f34
           name: 'GPU Utilization Total'
-          type: CALCULATED
+          type: DEPENDENT
           key: gpu.utilization_total
-          history: 7d
+          delay: '0'
+          history: 30d
           trends: 90d
+          value_type: FLOAT
           units: '%'
-          params: 'avg(last_foreach(//gpu.utilization.[*]))'
+          description: 'Total GPU utilisation'
+          preprocessing:
+            - type: STR_REPLACE
+              parameters:
+                - ' '
+                - ''
+            - type: JSONPATH
+              parameters:
+                - '$[*].7.avg()'
+          master_item:
+            key: gpu.data
       discovery_rules:
         - uuid: f9f116239737447b8ddfa2c558d8e583
           name: 'GPU Card'
@@ -94,9 +131,10 @@ zabbix_export:
               type: DEPENDENT
               key: 'gpu.fan.[{#ID}]'
               delay: '0'
-              history: 7d
-              trends: 30d
+              history: 30d
+              trends: 90d
               units: '%'
+              description: 'GPU Fan Speed'
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -111,9 +149,10 @@ zabbix_export:
               type: DEPENDENT
               key: 'gpu.mfree.[{#ID}]'
               delay: '0'
-              history: 7d
-              trends: 30d
+              history: 30d
+              trends: 90d
               units: B
+              description: 'Amount of free GPU memory'
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -131,9 +170,10 @@ zabbix_export:
               type: DEPENDENT
               key: 'gpu.mtotal.[{#ID}]'
               delay: '0'
-              history: 7d
-              trends: 30d
+              history: 30d
+              trends: 90d
               units: B
+              description: 'GPU memory capacity'
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -151,9 +191,10 @@ zabbix_export:
               type: DEPENDENT
               key: 'gpu.mused.[{#ID}]'
               delay: '0'
-              history: 7d
-              trends: 30d
+              history: 30d
+              trends: 90d
               units: B
+              description: 'The amount of GPU memory used'
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -171,10 +212,11 @@ zabbix_export:
               type: DEPENDENT
               key: 'gpu.power.[{#ID}]'
               delay: '0'
-              history: 7d
-              trends: 30d
+              history: 30d
+              trends: 90d
               value_type: FLOAT
               units: W
+              description: 'Power consumption of the GPU'
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -189,10 +231,11 @@ zabbix_export:
               type: DEPENDENT
               key: 'gpu.temperature.[{#ID}]'
               delay: '0'
-              history: 7d
-              trends: 30d
+              history: 30d
+              trends: 90d
               value_type: FLOAT
               units: °C
+              description: 'GPU Temperature'
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -207,10 +250,12 @@ zabbix_export:
                   expression: 'last(/Nvidia Multi-GPU/gpu.temperature.[{#ID}])>=80'
                   name: 'GPU {#ID} Temperature is extremely high'
                   priority: DISASTER
+                  description: 'The temperature of the GPU is very high. Possibility of failure'
                 - uuid: 9beb7dd56a644d63b48fd7604e57a233
                   expression: 'last(/Nvidia Multi-GPU/gpu.temperature.[{#ID}])>=65'
                   name: 'GPU {#ID} Temperature is high'
                   priority: AVERAGE
+                  description: 'Temperature of the graphics processor is high'
                   dependencies:
                     - name: 'GPU {#ID} Temperature is extremely high'
                       expression: 'last(/Nvidia Multi-GPU/gpu.temperature.[{#ID}])>=80'
@@ -219,9 +264,10 @@ zabbix_export:
               type: DEPENDENT
               key: 'gpu.utilization.[{#ID}]'
               delay: '0'
-              history: 7d
-              trends: 30d
+              history: 30d
+              trends: 90d
               units: '%'
+              description: 'GPU utilisation'
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -236,7 +282,7 @@ zabbix_export:
               expression: 'last(/Nvidia Multi-GPU/gpu.fan.[{#ID}])=0 and last(/Nvidia Multi-GPU/gpu.temperature.[{#ID}])>60'
               name: 'Problem with the fan'
               priority: DISASTER
-              description: 'Temperature above 70 degrees but the fan does not rotate'
+              description: 'Fan does not spin when GPU is hot'
           graph_prototypes:
             - uuid: 0e301af6d1ad469a83d8ff8d215e68bc
               name: 'GPU {#ID} Memory -{#NAME}'
@@ -263,6 +309,9 @@ zabbix_export:
               path: $.1
             - lld_macro: '{#NAME}'
               path: $.9
+      tags:
+        - tag: Application
+          value: Nvidia
       dashboards:
         - uuid: 04cb54bfd57042b98f3524f8d421749f
           name: 'GPU Panel'
