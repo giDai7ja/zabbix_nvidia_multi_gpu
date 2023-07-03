@@ -4,7 +4,7 @@
 
 This template is for Zabbix to monitor multiple NVidia GPUs
 
-For nvidia GPU monitoring, zabbix offers a standard [template](https://github.com/zabbix/community-templates/tree/main/Server_Hardware/Other/template_nvidia-smi_integration). The disadvantage is that it only allows monitoring one GPU. Of course there are other templates, but this one has some advantages. For example, this template uses only one user parameter and does not require additional scripts
+This template uses only one user parameter, receives all parameters in one request and requires no additional scripts
 
 ### Features
 
@@ -19,6 +19,10 @@ For nvidia GPU monitoring, zabbix offers a standard [template](https://github.co
 * Import template zbx_nvidia_multigpu.yaml and link this template to the monitored host
 
 This template is set up and tested on a server with nine Nvidia graphics cards. Comments, suggestions and help to improve this template are welcome
+
+## Author
+
+Vladimir Eliseev
 
 ## Macros used
 
@@ -39,29 +43,28 @@ There are no template links in this template.
 Common Items
 |Name|Description|Type|Key and additional info|
 |----|-----------|----|----|
-|GPU Count|<p>Number of GPUs detected</p>|`Dependent items`|gpu.count<p>Update: 1m</p>|
-|GPU Driver Version|<p>GPU driver version</p>|`Dependent items`|gpu.driver_version<p>Update: 1m</p>|
-|GPU Power Total|<p>Power consumption of all GPUs</p>|`Calculated items`|gpu.power_total<p>Update: 1m</p>|
-|GPUs Maximum Temperature|<p>Temperature of the hottest GPU</p>|`Calculated items`|gpu.temp_max<p>Update: 1m</p>|
-|GPU Utilization Total|<p>Total GPU utilisation</p>|`Calculated items`|gpu.utilization_total<p>Update: 1m</p>|
-
+|GPU Count|<p>Number of GPUs detected</p>|`Dependent items`|gpu.count|
+|GPU Driver Version|<p>GPU driver version</p>|`Dependent items`|gpu.driver_version|
+|GPU Power Total|<p>Power consumption of all GPUs</p>|`Dependent items`|gpu.power_total|
+|GPUs Maximum Temperature|<p>Temperature of the hottest GPU</p>|`Dependent items`|gpu.temp_max|
+|GPU Utilization Total|<p>Total GPU utilisation</p>|`Dependent items`|gpu.utilization_total|
 
 Items for each GPU found
 |Name|Description|Type|Key and additional info|
 |----|-----------|----|----|
-|GPU Power|<p>-</p>|`Zabbix agent`|gpu.power<p>Update: 1m</p>|
-|GPU Free Memory|<p>-</p>|`Zabbix agent`|gpu.mfree<p>Update: 1m</p>|
-|GPU Utilisation|<p>-</p>|`Zabbix agent`|gpu.utilization<p>Update: 1m</p>|
-|GPU Total Memory|<p>-</p>|`Zabbix agent`|gpu.mtotal<p>Update: 1m</p>|
-|GPU Temperature|<p>-</p>|`Zabbix agent`|gpu.temperature<p>Update: 1m</p>|
-|GPU Used Memory|<p>-</p>|`Zabbix agent`|gpu.used<p>Update: 1m</p>|
-|GPU Fan Speed|<p>-</p>|`Zabbix agent`|gpu.fanspeed<p>Update: 1m</p>|
-
+|GPU Power|Power consumption of the GPU|`Dependent items`|gpu.power|
+|GPU Total Memory|GPU memory capacity|`Dependent items`|gpu.mtotal|
+|GPU Used Memory|The amount of GPU memory used|`Dependent items`|gpu.mused|
+|GPU Free Memory|Amount of free GPU memory|`Dependent items`|gpu.mfree|
+|GPU Utilisation|GPU utilisation|`Dependent items`|gpu.utilization|
+|GPU Temperature|GPU Temperature|`Dependent items`|gpu.temperature|
+|GPU Fan Speed|GPU Fan Speed|`Dependent items`|gpu.fan|
 
 ## Triggers
 
-There are no triggers in this template.
-
-## Author
-
-Vladimir Eliseev
+|Name|Description|Expression|Priority|
+|----|-----------|----------|--------|
+|Driver version changed|The driver version has changed|<p>change(/Nvidia Multi-GPU/gpu.driver_version)<>0</p>|`Information`|
+|GPU {#ID} Temperature is extremely high|The temperature of the GPU is very high. Possibility of failure|last(/Nvidia Multi-GPU/gpu.temperature.[{#ID}])>=80|`Disaster`|
+|GPU {#ID} Temperature is high|Temperature of the graphics processor is high|<p>last(/Nvidia Multi-GPU/gpu.temperature.[{#ID}])>=65</p><p>**Dependencies**: GPU {#ID} Temperature is extremely high</p>|`Average`|
+|Problem with the fan|Fan does not spin when GPU is hot|last(/Nvidia Multi-GPU/gpu.fan.[{#ID}])=0 and last(/Nvidia Multi-GPU/gpu.temperature.[{#ID}])>60|`Disaster`|
