@@ -16,7 +16,7 @@ This template uses only one user parameter, receives all parameters in one reque
 
 * Upload the nvidia_gpus.conf user settings file to the directory according to your agent settings
 * Restart the zabbix-agent
-* Import template zbx_nvidia_multigpu.yaml and link this template to the monitored host
+* Import template zbx_NVidia_GPUs.yaml and link this template to the monitored host
 
 This template is set up and tested on a server with nine Nvidia graphics cards. Comments, suggestions and help to improve this template are welcome
 
